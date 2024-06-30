@@ -31,6 +31,8 @@
 
 <p> The lesson and original code used a newer version of Matlab - 2024a, which is powered with newer features in the Deep Learning Toolbox, namelly imagePretrainedNetwork(), trainnet() and minibatchpredict(), thus the original code is not usable with the students version of the software and adaptations must have been made. These changes are indicated in the code available at this repo.</p>
 
+<p> Another version issue is the inability to use a pretrained network besides the squeezenet, since the others are available only for the complete toolbox consumers, which is not the case for those who use the Matlab version provided by STI, thus <b>no comparison can be made</b>. </p>
+
 <h2>Project Structure</h2>
 
 <h3>Step 1</h3>
@@ -71,6 +73,7 @@
     </ul>
   </li>
 </ul>
+
 <h2>Usage</h2>
 <ul>
   <li>Ensure you have MATLAB 2022b installed on your machine.</li>
@@ -91,8 +94,28 @@
   <li> Display confusion matrix </li>
 </ul>
 
+<h3>Step 2</h3>
+<ul>
+  <li> No comparisson can be made, but the execution time is available in the ROC.png figure</li>
+</ul>
+
+<h3>Step 3</h3>
+<ul>
+  <li> Confusion matrix is displayied in confusion_matrix.png </li>
+  <li> The ROC curve is available in ROC.png </li>
+</ul>
+
+<h3>Step 4</h3>
+<ul>
+  <li> Results are displayed in this repo </li>
+</ul>
+
 <h2>Conclusion</h2>
-<p></p>
+<p>This project successfully demonstrates the adaptation and retraining of an AI model using MATLAB's Deep Learning toolbox, despite the constraints posed by using an older software version (2022b). The necessity to replace specific layers highlighted the importance of understanding underlying model architectures, which is made easier with the toolbox, even the author's version. The adaptations made to substitute the unavailable functions were critical in achieving the project's objectives.
+
+Due to version limitations, only the Squeezenet architecture could be utilized, precluding a comprehensive comparison between different pretrained models. Nonetheless, the training process was effectively carried out, and the model's performance was evaluated using a confusion matrix and ROC curve.
+
+The results, including execution times and performance metrics, are thoroughly documented within the repository.</p>
 
 </body>
 </html>
