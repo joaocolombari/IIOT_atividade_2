@@ -1,0 +1,77 @@
+imds = imageDatastore("train_image/", ...
+  'IncludeSubfolders',true, ...
+  'LabelSource','foldernames');
+
+% Divisão do conjunto de treinamento e teste. Utilizando 80% dos sinais
+% segmentados para o treinamento da rede.
+
+[imdsTrain,imdsValidation] = splitEachLabel(imds, 0.8,'randomize');
+
+%%
+
+% Carrega a rede Squeezenet
+
+%net = imagePretrainedNetwork("squeezenet");
+load('net.mat');
+
+%%
+
+% Sumário da rede
+
+analyzeNetwork(net)
+
+%%
+
+% Altera a camada convolucional 'conv10' para adaptação do número de
+% classes do problema de rolamentos (3 falhas)
+
+% Conta o numero de elementos nos labels das imagens da rede
+numClasses = numel(categories(imdsTrain.Labels));
+
+% cria outra camada convolucional para trocar o numero de classes de 1k
+% para 3 (sao tres erros do rolamento)
+newConvLayer = convolution2dLayer([1, 1],numClasses,'WeightLearnRateFactor',10,'BiasLearnRateFactor',10,"Name",'new_conv');
+net = replaceLayer(net,'conv10',newConvLayer);
+
+%%
+
+% Setup das opções de treinamento
+% Configura as opcoes de treinamento com SGDM (descida de gradiente
+% estocastico com momentum) 
+
+options = trainingOptions('sgdm', ...
+  'InitialLearnRate',0.0001, ...
+  'MaxEpochs',4, ...
+  'Shuffle','every-epoch', ...
+  'ValidationData',imdsValidation, ...
+  'ValidationFrequency',30, ...
+  'Verbose',false, ...
+  'MiniBatchSize',20, ...
+  'Plots','training-progress');
+
+%%
+
+% Treinamento do modelo utilizando a função trainnet
+% entra o conjunto imdsTrain e a rede net 
+net = trainnet(imdsTrain, net, "crossentropy", options);
+
+%%
+
+% Cria o Datastore contendo as informações de teste
+
+imdsTest = imageDatastore("test_image\", ...
+  'IncludeSubfolders',true,'LabelSource','foldernames');
+
+%%
+
+% Verifica a acurácia do modelo e exibe a matriz de confusão relativa ao
+% conjunto de teste
+
+scores = minibatchpredict(net,imdsTest,'MiniBatchSize',20);
+YPred = scores2label(scores,unique(imdsTrain.Labels));
+
+YTest = imdsTest.Labels;
+accuracy = sum(YPred == YTest)/numel(YTest)
+
+figure
+confusionchart(YTest,YPred)
