@@ -2,42 +2,44 @@ imds = imageDatastore("train_image/", ...
   'IncludeSubfolders',true, ...
   'LabelSource','foldernames');
 
-% Divisão do conjunto de treinamento e teste. Utilizando 80% dos sinais
-% segmentados para o treinamento da rede.
+% Division of the training and test set. Using 80% of the segmented signals for network training.
 
 [imdsTrain,imdsValidation] = splitEachLabel(imds, 0.8,'randomize');
 
 %%
 
-% Carrega a rede Squeezenet
+% Load the Squeezenet network
 
-%net = imagePretrainedNetwork("squeezenet");
+% THIS FUNCTION THAT HE USES DOES NOT EXIST IN THE VERSION OFFERED BY STI!!
+% net = imagePretrainedNetwork("squeezenet");
 load('net.mat');
 
 %%
 
-% Sumário da rede
+% Network summary
 
 analyzeNetwork(net)
 
 %%
 
-% Altera a camada convolucional 'conv10' para adaptação do número de
-% classes do problema de rolamentos (3 falhas)
+% Change the convolutional layer 'conv10' to adapt the number of classes for the bearing problem (3 faults)
 
-% Conta o numero de elementos nos labels das imagens da rede
+% Count the number of elements in the labels of the network images
 numClasses = numel(categories(imdsTrain.Labels));
 
-% cria outra camada convolucional para trocar o numero de classes de 1k
-% para 3 (sao tres erros do rolamento)
-newConvLayer = convolution2dLayer([1, 1],numClasses,'WeightLearnRateFactor',10,'BiasLearnRateFactor',10,"Name",'new_conv');
+% Create another convolutional layer to change the number of classes from 1k to 3 (there are three bearing faults)
+newConvLayer = convolution2dLayer([1, 1],numClasses,'WeightLearnRateFactor', ...
+    10,'BiasLearnRateFactor',10,"Name",'new_conv');
 net = replaceLayer(net,'conv10',newConvLayer);
+
+% Replace the classification layer
+newClassLayer = classificationLayer('Name', 'new_classoutput');
+net = replaceLayer(net, 'ClassificationLayer_predictions', newClassLayer);
 
 %%
 
-% Setup das opções de treinamento
-% Configura as opcoes de treinamento com SGDM (descida de gradiente
-% estocastico com momentum) 
+% Setup training options
+% Configure training options with SGDM (stochastic gradient descent with momentum)
 
 options = trainingOptions('sgdm', ...
   'InitialLearnRate',0.0001, ...
@@ -51,27 +53,54 @@ options = trainingOptions('sgdm', ...
 
 %%
 
-% Treinamento do modelo utilizando a função trainnet
-% entra o conjunto imdsTrain e a rede net 
-net = trainnet(imdsTrain, net, "crossentropy", options);
+% Train the model using the trainnet function
+% use the imdsTrain set and the net network
+
+% THIS FUNCTION THAT HE USES DOES NOT EXIST IN THE VERSION OFFERED BY STI!!
+% net = trainnet(imdsTrain, net, "crossentropy", options);
+net = trainNetwork(imdsTrain, net, options);
 
 %%
 
-% Cria o Datastore contendo as informações de teste
+% Create the Datastore containing the test information
 
-imdsTest = imageDatastore("test_image\", ...
+imdsTest = imageDatastore("test_image/", ...
   'IncludeSubfolders',true,'LabelSource','foldernames');
 
 %%
 
-% Verifica a acurácia do modelo e exibe a matriz de confusão relativa ao
-% conjunto de teste
+% Verify the accuracy of the model and display the confusion matrix for the test set
+% THIS FUNCTION THAT HE USES DOES NOT EXIST IN THE VERSION OFFERED BY STI!!
+% scores = minibatchpredict(net,imdsTest,'MiniBatchSize',20);
+% YPred = scores2label(scores,unique(imdsTrain.Labels));
+% 
+% YTest = imdsTest.Labels;
+% accuracy = sum(YPred == YTest)/numel(YTest)
+% 
+% figure
+% confusionchart(YTest,YPred)
 
-scores = minibatchpredict(net,imdsTest,'MiniBatchSize',20);
-YPred = scores2label(scores,unique(imdsTrain.Labels));
+% Verify the accuracy of the model and display the confusion matrix for the test set
 
+% Initialize variables
+YPred = [];
 YTest = imdsTest.Labels;
-accuracy = sum(YPred == YTest)/numel(YTest)
+miniBatchSize = 20;
 
-figure
-confusionchart(YTest,YPred)
+% Classify images in batches
+reset(imdsTest);
+while hasdata(imdsTest)
+    % Read mini-batch of data
+    data = read(imdsTest);
+    % Classify mini-batch
+    scores = classify(net, data, 'MiniBatchSize', miniBatchSize);
+    % Accumulate predictions
+    YPred = [YPred; scores];
+end
+
+% Calculate accuracy
+accuracy = sum(YPred == YTest) / numel(YTest);
+
+% Display confusion matrix
+figure;
+confusionchart(YTest, YPred);
